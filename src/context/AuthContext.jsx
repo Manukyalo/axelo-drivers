@@ -57,9 +57,14 @@ export const AuthProvider = ({ children }) => {
               if (profSnap.exists()) {
                 setDriverProfile(profSnap.data());
               }
+            }, (profileErr) => {
+              console.warn('[AuthContext] profile snapshot listener:', profileErr.message);
             });
           }
           // Mark auth resolved after first Firestore response
+          setAuthChecked(true);
+        }, (authErr) => {
+          console.warn('[AuthContext] driverAuth snapshot listener:', authErr.message);
           setAuthChecked(true);
         });
       } else {

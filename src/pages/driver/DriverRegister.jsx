@@ -38,19 +38,29 @@ const DriverRegister = () => {
     setIsVerifying(true);
     try {
       const cleanEmail = formData.email.trim().toLowerCase();
-      const colRef = formData.role === 'porter' ? collection(db, 'porters') : collection(db, 'drivers');
-      const q = query(colRef, where('email', '==', cleanEmail));
-      const querySnapshot = await getDocs(q);
-      
-      const driverDoc = querySnapshot.empty ? null : querySnapshot.docs[0];
-      
-      // Merge with system data if exists, otherwise proceed as new personnel
-      setFormData(prev => ({ 
-        ...prev, 
-        driverId: driverDoc?.id || null,
-        fullName: driverDoc?.data()?.name || prev.fullName,
-        isNewDriver: querySnapshot.empty
-      }));
+      try {
+        const colRef = formData.role === 'porter' ? collection(db, 'porters') : collection(db, 'drivers');
+        const q = query(colRef, where('email', '==', cleanEmail));
+        const querySnapshot = await getDocs(q);
+        
+        const driverDoc = querySnapshot.empty ? null : querySnapshot.docs[0];
+        
+        // Merge with system data if exists, otherwise proceed as new personnel
+        setFormData(prev => ({ 
+          ...prev, 
+          driverId: driverDoc?.id || null,
+          fullName: driverDoc?.data()?.name || prev.fullName,
+          isNewDriver: querySnapshot.empty
+        }));
+      } catch (permError) {
+        // Unauthenticated visitor cannot query drivers/porters collection; proceed cleanly as new personnel
+        console.warn("Pre-check query skipped:", permError.message);
+        setFormData(prev => ({ 
+          ...prev, 
+          driverId: null,
+          isNewDriver: true 
+        }));
+      }
       
       // Proceed to Face Scan
       setStep(3);

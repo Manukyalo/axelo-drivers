@@ -31,17 +31,27 @@ const SafariRegister = () => {
     setIsVerifying(true);
     try {
       const cleanEmail = formData.email.trim().toLowerCase();
-      const driversRef = collection(db, 'drivers');
-      const q = query(driversRef, where('email', '==', cleanEmail));
-      const querySnapshot = await getDocs(q);
-      
-      const driverDoc = querySnapshot.empty ? null : querySnapshot.docs[0];
-      setFormData(prev => ({ 
-        ...prev, 
-        driverId: driverDoc?.id || null,
-        fullName: driverDoc?.data()?.name || prev.fullName,
-        isNewDriver: querySnapshot.empty
-      }));
+      try {
+        const driversRef = collection(db, 'drivers');
+        const q = query(driversRef, where('email', '==', cleanEmail));
+        const querySnapshot = await getDocs(q);
+        
+        const driverDoc = querySnapshot.empty ? null : querySnapshot.docs[0];
+        setFormData(prev => ({ 
+          ...prev, 
+          driverId: driverDoc?.id || null,
+          fullName: driverDoc?.data()?.name || prev.fullName,
+          isNewDriver: querySnapshot.empty
+        }));
+      } catch (permError) {
+        // Unauthenticated visitor cannot query drivers collection; proceed cleanly as new driver
+        console.warn("Pre-check query skipped:", permError.message);
+        setFormData(prev => ({ 
+          ...prev, 
+          driverId: null,
+          isNewDriver: true 
+        }));
+      }
       setStep(2);
     } catch (error) {
       console.error("Verification error:", error);
