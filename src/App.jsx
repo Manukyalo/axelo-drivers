@@ -99,17 +99,17 @@ const AppContent = () => {
           </ProtectedRoute>
         } />
         <Route path="/driver/inspection/:id" element={
-          <ProtectedRoute allowedRole="driver">
+          <ProtectedRoute allowedRoles={['driver', 'tour_guide']}>
             <InspectionChecklist role="driver" />
           </ProtectedRoute>
         } />
         <Route path="/driver/expense/:id" element={
-          <ProtectedRoute allowedRole="driver">
+          <ProtectedRoute allowedRoles={['driver', 'tour_guide']}>
             <ExpenseLog role="driver" />
           </ProtectedRoute>
         } />
         <Route path="/driver/porters" element={
-          <ProtectedRoute allowedRole="driver">
+          <ProtectedRoute allowedRoles={['driver']}>
             <PorterManagement />
           </ProtectedRoute>
         } />
@@ -134,57 +134,57 @@ const AppContent = () => {
         <Route path="/safari/register" element={<SafariRegister />} />
         <Route path="/safari/face-scan" element={<SafariFaceScan />} />
         <Route path="/safari/pending" element={
-          <ProtectedRoute allowedRole="safari_driver">
+          <ProtectedRoute allowedRoles={['safari_driver']}>
             <SafariPendingApproval />
           </ProtectedRoute>
         } />
         <Route path="/safari/dashboard" element={
-          <ProtectedRoute allowedRole="safari_driver">
+          <ProtectedRoute allowedRoles={['safari_driver']}>
             <SafariDashboard />
           </ProtectedRoute>
         } />
         <Route path="/safari/trips" element={
-          <ProtectedRoute allowedRole="safari_driver">
+          <ProtectedRoute allowedRoles={['safari_driver']}>
             <SafariTrips />
           </ProtectedRoute>
         } />
         <Route path="/safari/trip/:id" element={
-          <ProtectedRoute allowedRole="safari_driver">
+          <ProtectedRoute allowedRoles={['safari_driver']}>
             <SafariTripDetail />
           </ProtectedRoute>
         } />
         <Route path="/safari/inspection/:id" element={
-          <ProtectedRoute allowedRole="safari_driver">
+          <ProtectedRoute allowedRoles={['safari_driver']}>
             <InspectionChecklist role="safari_driver" />
           </ProtectedRoute>
         } />
         <Route path="/safari/expense/:id" element={
-          <ProtectedRoute allowedRole="safari_driver">
+          <ProtectedRoute allowedRoles={['safari_driver']}>
             <ExpenseLog role="safari_driver" />
           </ProtectedRoute>
         } />
         <Route path="/safari/fees/:id" element={
-          <ProtectedRoute allowedRole="safari_driver">
+          <ProtectedRoute allowedRoles={['safari_driver']}>
             <ParkFees />
           </ProtectedRoute>
         } />
         <Route path="/safari/sos" element={
-          <ProtectedRoute allowedRole="safari_driver">
+          <ProtectedRoute allowedRoles={['safari_driver']}>
             <SOSSystem />
           </ProtectedRoute>
         } />
         <Route path="/safari/messages" element={
-          <ProtectedRoute allowedRole="safari_driver">
+          <ProtectedRoute allowedRoles={['safari_driver']}>
             <Chat role="safari_driver" />
           </ProtectedRoute>
         } />
         <Route path="/safari/profile" element={
-          <ProtectedRoute allowedRole="safari_driver">
+          <ProtectedRoute allowedRoles={['safari_driver']}>
             <Profile />
           </ProtectedRoute>
         } />
         <Route path="/safari/map" element={
-          <ProtectedRoute allowedRole="safari_driver">
+          <ProtectedRoute allowedRoles={['safari_driver']}>
             <LiveMap />
           </ProtectedRoute>
         } />

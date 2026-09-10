@@ -36,6 +36,13 @@ const SafariLogin = () => {
       }
 
       const data = authSnap.data();
+
+      // Guard: this portal is exclusively for Safari Expeditions staff
+      if (data.role !== 'safari_driver') {
+        toast.error("This portal is for Safari Expeditions staff only. City Ops staff must use the Field Login portal.");
+        return;
+      }
+
       if (!data.approved) {
         navigate('/safari/pending');
         return;

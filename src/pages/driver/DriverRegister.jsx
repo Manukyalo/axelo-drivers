@@ -27,7 +27,6 @@ const DriverRegister = () => {
 
   const handleRoleSelect = (selectedRole) => {
     setFormData(prev => ({ ...prev, role: selectedRole }));
-    setStep(1); // Proceed to credentials
   };
 
   const handleStep1Submit = async (e) => {
