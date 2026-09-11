@@ -8,6 +8,12 @@ import { KENYA_PARKS } from '../../utils/parkBoundaries';
 import { KENYA_LODGES } from '../../utils/lodgesData';
 import { KENYA_GATES } from '../../utils/gatesData';
 
+const OFM_STYLES = {
+  dark: 'https://tiles.openfreemap.org/styles/dark',
+  liberty: 'https://tiles.openfreemap.org/styles/liberty',
+  bright: 'https://tiles.openfreemap.org/styles/bright'
+};
+
 const LiveMap = () => {
   const navigate = useNavigate();
   const mapContainer = useRef(null);
@@ -19,11 +25,18 @@ const LiveMap = () => {
   
   const { currentLocation, role } = useLocation();
   const [zoom] = useState(12.5);
+  const [mapStyle, setMapStyle] = useState('dark');
   
   // Layer Toggles
   const [showParks, setShowParks] = useState(true);
   const [showLodges, setShowLodges] = useState(true);
   const [showGates, setShowGates] = useState(true);
+
+  const handleStyleChange = (newStyle) => {
+    if (!map.current || mapStyle === newStyle) return;
+    setMapStyle(newStyle);
+    map.current.setStyle(OFM_STYLES[newStyle]);
+  };
 
   // Sync Visibility
   useEffect(() => {
@@ -41,7 +54,7 @@ const LiveMap = () => {
     
     map.current = new maplibregl.Map({
       container: mapContainer.current,
-      style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+      style: OFM_STYLES[mapStyle] || OFM_STYLES.dark,
       center: isCityPersonnel ? COORD_MOMBASA : [36.8219, -1.2921], // Center on coast if city-based
       zoom: isCityPersonnel ? 11 : zoom,
       pitch: 45,
@@ -173,17 +186,25 @@ const LiveMap = () => {
            <ChevronLeft size={24} />
          </button>
 
-         {/* LAYER TOGGLE PILL */}
-         <div className="flex bg-surface/80 backdrop-blur-xl border border-white/10 p-1.5 rounded-[1.5rem] shadow-2xl gap-1">
-            <button onClick={() => setShowParks(!showParks)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-tight transition-all ${showParks ? 'bg-accent-green text-primary-dark' : 'text-text-muted'}`}>Parks</button>
-            <button onClick={() => setShowLodges(!showLodges)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-tight transition-all ${showLodges ? 'bg-accent-gold text-primary-dark' : 'text-text-muted'}`}>Lodges</button>
+         {/* OFM MAP STYLE & LAYER TOGGLE PILL */}
+         <div className="flex bg-surface/80 backdrop-blur-xl border border-white/10 p-1.5 rounded-[1.5rem] shadow-2xl gap-1 items-center">
+            <button 
+              onClick={() => handleStyleChange(mapStyle === 'dark' ? 'liberty' : 'dark')} 
+              className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-tight transition-all flex items-center gap-1.5 ${mapStyle === 'liberty' ? 'bg-accent-gold text-primary-dark shadow-sm' : 'bg-white/10 text-white'}`}
+              title="Toggle OpenFreeMap Style"
+            >
+              <span>{mapStyle === 'dark' ? '🌙 Dark' : '🧭 Liberty'}</span>
+            </button>
+            <div className="w-px h-5 bg-white/10 my-auto mx-0.5" />
+            <button onClick={() => setShowParks(!showParks)} className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-tight transition-all ${showParks ? 'bg-accent-green text-primary-dark' : 'text-text-muted'}`}>Parks</button>
+            <button onClick={() => setShowLodges(!showLodges)} className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-tight transition-all ${showLodges ? 'bg-accent-gold text-primary-dark' : 'text-text-muted'}`}>Lodges</button>
             <button 
               onClick={() => {
                 if (map.current) map.current.flyTo({ center: [39.6646, -4.0435], zoom: 11, essential: true });
               }}
-              className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-tight bg-white/5 text-accent-gold border border-accent-gold/20"
+              className="px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-tight bg-white/5 text-accent-gold border border-accent-gold/20"
             >
-              Coast Unit
+              Coast
             </button>
          </div>
       </div>
