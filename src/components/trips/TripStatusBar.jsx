@@ -1,50 +1,86 @@
 import React from 'react';
-import { Check, Circle } from 'lucide-react';
+import { Check } from 'lucide-react';
 
+const STEPS = [
+  { key: 'Assigned',       label: 'Assigned'  },
+  { key: 'Acknowledged',   label: 'Confirmed' },
+  { key: 'En Route',       label: 'En route'  },
+  { key: 'Client Picked Up', label: 'Picked up' },
+  { key: 'In Transit',     label: 'In transit' },
+  { key: 'Trip Complete',  label: 'Done'      },
+];
+
+/**
+ * TripStatusBar — horizontal progress stepper for the trip detail view.
+ * Displays step dots with a gold connecting line and labels beneath.
+ */
 const TripStatusBar = ({ currentStatus }) => {
-  const steps = [
-    'Assigned',
-    'Acknowledged',
-    'En Route',
-    'Client Picked Up',
-    'In Transit',
-    'Trip Complete'
-  ];
-
-  const currentIdx = steps.indexOf(currentStatus);
+  const currentIdx = STEPS.findIndex(s => s.key === currentStatus);
 
   return (
-    <div className="w-full py-6">
-      <div className="flex items-center justify-between relative px-2">
-        {/* Progress Line */}
-        <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-card -translate-y-1/2 z-0 mx-8" />
-        <div 
-          className="absolute top-1/2 left-0 h-0.5 bg-accent-gold -translate-y-1/2 z-0 transition-all duration-700 ease-in-out mx-8"
-          style={{ width: `${(currentIdx / (steps.length - 1)) * 100}%` }}
+    <div className="w-full px-1 py-4">
+      {/* Dot row */}
+      <div className="relative flex items-center justify-between">
+        {/* Track line: base */}
+        <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 h-0.5 bg-card-raised" />
+        {/* Track line: progress */}
+        <div
+          className="absolute left-4 top-1/2 -translate-y-1/2 h-0.5 bg-accent-gold transition-all duration-500 ease-out"
+          style={{
+            width: currentIdx < 0
+              ? '0%'
+              : `${(currentIdx / (STEPS.length - 1)) * (100 - (8 / STEPS.length * 100))}%`,
+          }}
         />
 
-        {steps.map((step, idx) => {
-          const isCompleted = idx < currentIdx;
-          const isCurrent = idx === currentIdx;
+        {STEPS.map((step, idx) => {
+          const done    = currentIdx > idx;
+          const current = currentIdx === idx;
 
           return (
-            <div key={idx} className="flex flex-col items-center relative z-10 group">
-              <div 
+            <div key={step.key} className="relative z-10 flex flex-col items-center gap-2">
+              <div
                 className={`
-                  w-8 h-8 rounded-full flex items-center justify-center transition-all duration-500
-                  ${isCompleted ? 'bg-accent-gold text-primary-dark' : isCurrent ? 'bg-primary-dark border-2 border-accent-gold text-accent-gold' : 'bg-card border-2 border-border text-text-muted'}
-                  ${isCurrent ? 'ring-4 ring-accent-gold/20 scale-125' : ''}
+                  w-7 h-7 rounded-full flex items-center justify-center transition-all duration-300
+                  ${done
+                    ? 'bg-accent-gold text-primary-dark'
+                    : current
+                    ? 'bg-primary-dark border-2 border-accent-gold text-accent-gold ring-4 ring-accent-gold/15'
+                    : 'bg-card border-2 border-border-subtle text-text-muted'
+                  }
                 `}
               >
-                {isCompleted ? <Check size={16} strokeWidth={3} /> : <Circle size={12} className={isCurrent ? 'fill-current' : ''} />}
+                {done
+                  ? <Check size={13} strokeWidth={3} />
+                  : <span className={`w-2 h-2 rounded-full ${current ? 'bg-accent-gold' : 'bg-text-muted/30'}`} />
+                }
               </div>
-              <span className={`
-                absolute top-10 whitespace-nowrap text-[8px] font-black uppercase tracking-widest transition-opacity duration-300
-                ${isCurrent ? 'text-accent-gold opacity-100' : 'text-text-muted opacity-40'}
-              `}>
-                {step.split(' ').join('\n')}
-              </span>
             </div>
+          );
+        })}
+      </div>
+
+      {/* Labels row */}
+      <div className="flex justify-between mt-2.5 px-0">
+        {STEPS.map((step, idx) => {
+          const done    = currentIdx > idx;
+          const current = currentIdx === idx;
+          return (
+            <span
+              key={step.key}
+              className={`
+                text-[10px] font-medium text-center leading-tight transition-colors duration-300
+                ${current
+                  ? 'text-accent-gold'
+                  : done
+                  ? 'text-text-secondary'
+                  : 'text-text-muted/50'
+                }
+              `}
+              style={{ width: `${100 / STEPS.length}%` }}
+            >
+              {step.label}
+            </span>
           );
         })}
       </div>

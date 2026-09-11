@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { db } from '../../firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { auth, db } from '../../firebase';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { User, Mail, Phone, Lock, ArrowRight, ShieldCheck, Car, Eye, EyeOff, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -31,42 +32,92 @@ const DriverRegister = () => {
 
   const handleStep1Submit = async (e) => {
     e.preventDefault();
+    if (formData.password.length < 6) {
+      return toast.error("Password must be at least 6 characters");
+    }
     if (formData.password !== formData.confirmPassword) {
       return toast.error("Passwords do not match");
     }
 
     setIsVerifying(true);
+    const toastId = toast.loading("Registering personnel credentials...");
     try {
       const cleanEmail = formData.email.trim().toLowerCase();
-      try {
-        const colRef = formData.role === 'porter' ? collection(db, 'porters') : collection(db, 'drivers');
-        const q = query(colRef, where('email', '==', cleanEmail));
-        const querySnapshot = await getDocs(q);
-        
-        const driverDoc = querySnapshot.empty ? null : querySnapshot.docs[0];
-        
-        // Merge with system data if exists, otherwise proceed as new personnel
-        setFormData(prev => ({ 
-          ...prev, 
-          driverId: driverDoc?.id || null,
-          fullName: driverDoc?.data()?.name || prev.fullName,
-          isNewDriver: querySnapshot.empty
-        }));
-      } catch (permError) {
-        // Unauthenticated visitor cannot query drivers/porters collection; proceed cleanly as new personnel
-        console.warn("Pre-check query skipped:", permError.message);
-        setFormData(prev => ({ 
-          ...prev, 
-          driverId: null,
-          isNewDriver: true 
-        }));
+      const role = formData.role || 'driver';
+
+      // 1. Create Firebase Auth account
+      const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, formData.password);
+      const user = userCredential.user;
+
+      // 2. Build registration payload
+      const registrationPayload = {
+        uid: user.uid,
+        id: user.uid,
+        driverDocId: user.uid,
+        name: formData.fullName.trim(),
+        email: cleanEmail,
+        personalEmail: cleanEmail,
+        phone: formData.phone.trim(),
+        role: role,
+        status: 'Pending',
+        approved: false,
+        registeredAt: serverTimestamp(),
+        lastLogin: serverTimestamp(),
+        biometricsConfigured: false,
+        faceImageUrl: '',
+        faceDescriptor: null,
+        loginAttempts: 0,
+        lockedUntil: null,
+        fcmToken: null,
+        preferredPorterName: formData.porterName?.trim() || '',
+        preferredPorterTrips: formData.porterTrips ? Number(formData.porterTrips) : 0
+      };
+
+      // 3. Write directly to driverAuth queue (source of truth for admin approval)
+      await setDoc(doc(db, 'driverAuth', user.uid), registrationPayload);
+
+      // 4. Write primary driver profile
+      await setDoc(doc(db, 'drivers', user.uid), registrationPayload);
+
+      // 5. If porter role, also initialize porter record
+      if (role === 'porter') {
+        await setDoc(doc(db, 'porters', user.uid), {
+          id: user.uid,
+          uid: user.uid,
+          name: formData.fullName.trim(),
+          email: cleanEmail,
+          phone: formData.phone.trim(),
+          role: 'porter',
+          status: 'Pending',
+          approved: false,
+          totalTrips: 0,
+          registeredAt: serverTimestamp()
+        });
       }
+
+      // 6. Alert Admin Dashboard via real-time notifications
+      await addDoc(collection(db, 'notifications'), {
+        title: `New Personnel Registration: ${role.toUpperCase().replace('_', ' ')}`,
+        message: `${formData.fullName.trim()} (${cleanEmail}) submitted credentials and is awaiting administrative approval.`,
+        type: 'WARNING',
+        targetRole: 'admin',
+        userId: user.uid,
+        date: serverTimestamp(),
+        read: false
+      });
+
+      setFormData(prev => ({ ...prev, uid: user.uid }));
+      toast.success("Credentials registered! Proceeding to Biometric Setup...", { id: toastId });
       
-      // Proceed to Face Scan
+      // Advance to Face ID Setup
       setStep(3);
     } catch (error) {
-      console.error("Verification error:", error);
-      toast.error("Verification failed: " + (error.code || error.message));
+      console.error("Registration error:", error);
+      let msg = error.message;
+      if (error.code === 'auth/email-already-in-use') {
+        msg = "An account with this email already exists. Please log in instead.";
+      }
+      toast.error(msg, { id: toastId });
     } finally {
       setIsVerifying(false);
     }
@@ -273,13 +324,23 @@ const DriverRegister = () => {
               </p>
             </div>
 
-            <button
-              onClick={() => navigate('/driver/face-scan', { state: { formData } })}
-              className="w-full bg-accent-gold text-primary-dark font-black py-4 rounded-xl shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all"
-            >
-              Start Face ID Setup
-              <ArrowRight size={20} />
-            </button>
+            <div className="space-y-3">
+              <button
+                onClick={() => navigate('/driver/face-scan', { state: { formData } })}
+                className="w-full bg-accent-gold text-primary-dark font-black py-4 rounded-xl shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all text-xs uppercase tracking-widest"
+              >
+                Start Face ID Setup
+                <ArrowRight size={20} />
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => navigate('/driver/pending')}
+                className="w-full py-3.5 bg-white/5 hover:bg-white/10 text-text-muted hover:text-white rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all"
+              >
+                Complete Face ID Later & View Status
+              </button>
+            </div>
           </div>
         )}
       </div>

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { db } from '../../firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { auth, db } from '../../firebase';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { User, Mail, Phone, Lock, ArrowRight, ShieldCheck, Map, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -24,38 +25,74 @@ const SafariRegister = () => {
 
   const handleStep1Submit = async (e) => {
     e.preventDefault();
+    if (formData.password.length < 6) {
+      return toast.error("Password must be at least 6 characters");
+    }
     if (formData.password !== formData.confirmPassword) {
       return toast.error("Passwords do not match");
     }
 
     setIsVerifying(true);
+    const toastId = toast.loading("Registering expedition credentials...");
     try {
       const cleanEmail = formData.email.trim().toLowerCase();
-      try {
-        const driversRef = collection(db, 'drivers');
-        const q = query(driversRef, where('email', '==', cleanEmail));
-        const querySnapshot = await getDocs(q);
-        
-        const driverDoc = querySnapshot.empty ? null : querySnapshot.docs[0];
-        setFormData(prev => ({ 
-          ...prev, 
-          driverId: driverDoc?.id || null,
-          fullName: driverDoc?.data()?.name || prev.fullName,
-          isNewDriver: querySnapshot.empty
-        }));
-      } catch (permError) {
-        // Unauthenticated visitor cannot query drivers collection; proceed cleanly as new driver
-        console.warn("Pre-check query skipped:", permError.message);
-        setFormData(prev => ({ 
-          ...prev, 
-          driverId: null,
-          isNewDriver: true 
-        }));
-      }
+
+      // 1. Create Firebase Auth account
+      const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, formData.password);
+      const user = userCredential.user;
+
+      // 2. Prepare registration payload
+      const registrationPayload = {
+        uid: user.uid,
+        id: user.uid,
+        driverDocId: user.uid,
+        name: formData.fullName.trim(),
+        email: cleanEmail,
+        personalEmail: cleanEmail,
+        phone: formData.phone.trim(),
+        role: 'safari_driver',
+        type: 'Safari Guide',
+        status: 'Pending',
+        approved: false,
+        registeredAt: serverTimestamp(),
+        lastLogin: serverTimestamp(),
+        biometricsConfigured: false,
+        faceImageUrl: '',
+        faceDescriptor: null,
+        loginAttempts: 0,
+        lockedUntil: null,
+        fcmToken: null
+      };
+
+      // 3. Write directly to driverAuth queue (source of truth for admin approval)
+      await setDoc(doc(db, 'driverAuth', user.uid), registrationPayload);
+
+      // 4. Write primary driver profile
+      await setDoc(doc(db, 'drivers', user.uid), registrationPayload);
+
+      // 5. Alert Admin Dashboard via real-time notifications
+      await addDoc(collection(db, 'notifications'), {
+        title: 'New Safari Driver Registration',
+        message: `${formData.fullName.trim()} (${cleanEmail}) submitted credentials for Safari Expeditions and awaits approval.`,
+        type: 'WARNING',
+        targetRole: 'admin',
+        userId: user.uid,
+        date: serverTimestamp(),
+        read: false
+      });
+
+      setFormData(prev => ({ ...prev, uid: user.uid }));
+      toast.success("Expedition profile registered! Pending admin approval.", { id: toastId });
+      
+      // Advance to Face ID Setup
       setStep(2);
     } catch (error) {
-      console.error("Verification error:", error);
-      toast.error("Verification failed: " + (error.code || error.message));
+      console.error("Registration error:", error);
+      let msg = error.message;
+      if (error.code === 'auth/email-already-in-use') {
+        msg = "An account with this email already exists. Please log in instead.";
+      }
+      toast.error(msg, { id: toastId });
     } finally {
       setIsVerifying(false);
     }
@@ -180,13 +217,23 @@ const SafariRegister = () => {
               </p>
             </div>
 
-            <button
-              onClick={() => navigate('/safari/face-scan', { state: { formData } })}
-              className="w-full bg-accent-green text-white font-black py-4 rounded-xl shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all"
-            >
-              Start Face ID Scan
-              <ArrowRight size={20} />
-            </button>
+            <div className="space-y-3">
+              <button
+                onClick={() => navigate('/safari/face-scan', { state: { formData } })}
+                className="w-full bg-accent-green text-white font-black py-4 rounded-xl shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all text-xs uppercase tracking-widest"
+              >
+                Start Face ID Scan
+                <ArrowRight size={20} />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => navigate('/safari/pending')}
+                className="w-full py-3.5 bg-white/5 hover:bg-white/10 text-text-muted hover:text-white rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all"
+              >
+                Complete Face ID Later & View Status
+              </button>
+            </div>
           </div>
         )}
       </div>

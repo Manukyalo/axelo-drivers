@@ -20,13 +20,20 @@ export const DriverProvider = ({ children }) => {
     const field = role === 'porter' ? 'porterId' : 'driverId';
     const bookingsQuery = query(
       collection(db, 'bookings'),
-      where(field, '==', currentUser.uid),
-      orderBy('date', 'desc')
+      where(field, '==', currentUser.uid)
     );
 
     const unsubBookings = onSnapshot(bookingsQuery, (snapshot) => {
-      const bookings = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const bookings = snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .sort((a, b) => {
+          const timeA = new Date(a.date || 0).getTime();
+          const timeB = new Date(b.date || 0).getTime();
+          return timeB - timeA;
+        });
       setActiveBookings(bookings);
+    }, (err) => {
+      console.warn('[DriverContext] bookings listener:', err.message);
     });
 
     // Listen for messages

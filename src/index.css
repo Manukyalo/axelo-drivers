@@ -1,64 +1,146 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
 @theme {
-  --color-primary-dark: #0A0F0D;
-  --color-surface: #111A15;
-  --color-card: #1A2E20;
+  /* ── Palette ── */
+  --color-primary-dark: #070C09;
+  --color-surface: #0F1912;
+  --color-card: #182A1C;
+  --color-card-raised: #1E3324;
   --color-accent-gold: #C9A84C;
+  --color-accent-gold-dim: rgba(201, 168, 76, 0.12);
   --color-accent-green: #2D6A4F;
   --color-danger-red: #DC2626;
   --color-warning-orange: #E76F51;
-  --color-success: #16A34A;
-  --color-text-primary: #F0EDE8;
-  --color-text-muted: #8A9E8F;
-  --color-border: rgba(201, 168, 76, 0.12);
+  --color-success: #22C55E;
+  --color-success-dim: rgba(34, 197, 94, 0.12);
+  --color-text-primary: #EDE9E3;
+  --color-text-secondary: #A8B8A8;
+  --color-text-muted: #5E7560;
+  --color-border: rgba(201, 168, 76, 0.10);
+  --color-border-subtle: rgba(255, 255, 255, 0.06);
 
-  --font-heading: "Playfair Display", serif;
+  /* ── Typography ── */
+  --font-display: "Syne", sans-serif;
+  --font-heading: "DM Sans", sans-serif;
   --font-body: "DM Sans", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
 
-  --radius-card: 16px;
-  --radius-button: 12px;
-  --radius-input: 12px;
+  /* ── Radii ── */
+  --radius-card: 20px;
+  --radius-button: 14px;
+  --radius-input: 14px;
+  --radius-pill: 9999px;
 }
 
+/* ── Base ── */
 @layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
   body {
     @apply bg-primary-dark text-text-primary font-body;
     -webkit-tap-highlight-color: transparent;
     padding-bottom: env(safe-area-inset-bottom);
     padding-top: env(safe-area-inset-top);
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-heading;
+  /* Browser surfaces — themed */
+  ::selection {
+    background: rgba(201, 168, 76, 0.25);
+    color: #EDE9E3;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent-gold);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+
+  input, textarea {
+    caret-color: var(--color-accent-gold);
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
   }
 }
 
-/* Custom Scrollbar for Expedition Theme */
+/* ── Scrollbar ── */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--color-primary-dark);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-card);
+  background: var(--color-card-raised);
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-accent-gold);
 }
 
-/* Skeleton Loading Animation */
+/* ── Skeleton loader ── */
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
+  0%   { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
 
 .skeleton {
-  @apply bg-card relative overflow-hidden rounded;
-  background: linear-gradient(90deg, #1A2E20 25%, #2D3E32 50%, #1A2E20 75%);
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #182A1C 25%, #243D28 50%, #182A1C 75%);
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+/* ── Motion ── */
+@keyframes pulse-ring {
+  0%   { transform: scale(1); opacity: 0.7; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(40px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── Display type utility ── */
+.font-display {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+/* ── Safe area utility ── */
+.pb-safe {
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+}
+
+/* ── Card press feedback ── */
+.press-scale {
+  transition: transform 0.12s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.press-scale:active {
+  transform: scale(0.975);
 }
