@@ -24,7 +24,9 @@ class LocationEngine {
           latitude,
           longitude,
           heading: heading || 0,
-          speed: speed || 0,
+          // Geolocation API returns speed in m/s — convert to km/h here so every
+          // consumer (dashboards, Firestore, LiveMap) receives the correct unit.
+          speed: speed != null ? Math.round(speed * 3.6 * 10) / 10 : 0,
           accuracy,
           bookingId,
           isOnline: true,

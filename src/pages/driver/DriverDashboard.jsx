@@ -222,7 +222,7 @@ const DriverDashboard = () => {
           <div className="w-px h-8 bg-border-subtle shrink-0" />
           <DataChip
             label="Heading"
-            value={currentLocation.heading ? `${Math.round(currentLocation.heading)}°` : '—'}
+            value={currentLocation.heading != null ? `${Math.round(currentLocation.heading)}°` : '—'}
             accent
           />
           <div className="w-px h-8 bg-border-subtle shrink-0" />

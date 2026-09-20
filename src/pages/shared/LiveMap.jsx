@@ -227,7 +227,7 @@ const LiveMap = () => {
                 <span className="w-1 h-1 bg-success rounded-full" /> Live
               </p>
               <p className="text-[10px] font-mono font-bold text-white mt-0.5">
-                {currentLocation?.latitude?.toFixed(3)},{currentLocation?.longitude?.toFixed(3)}
+                {currentLocation?.latitude?.toFixed(4)},{currentLocation?.longitude?.toFixed(4)}
               </p>
            </div>
         </div>

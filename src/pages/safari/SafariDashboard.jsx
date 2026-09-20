@@ -120,14 +120,18 @@ const SafariDashboard = () => {
             <div className="bg-black/30 backdrop-blur-md rounded-2xl p-3 border border-white/5">
               <span className="text-[8px] font-black uppercase tracking-widest text-text-muted/70 block">Wilderness GPS</span>
               <span className="text-xs font-mono font-bold text-white tracking-tight mt-1 block truncate">
-                {currentLocation ? `${currentLocation.latitude?.toFixed(4)}, ${currentLocation.longitude?.toFixed(4)}` : '-1.2921, 36.8219'}
+                {currentLocation
+                  ? `${currentLocation.latitude?.toFixed(4)}, ${currentLocation.longitude?.toFixed(4)}`
+                  : 'Acquiring…'}
               </span>
             </div>
 
             <div className="bg-black/30 backdrop-blur-md rounded-2xl p-3 border border-white/5">
               <span className="text-[8px] font-black uppercase tracking-widest text-text-muted/70 block">Compass Azimuth</span>
               <span className="text-xs font-mono font-bold text-emerald-400 tracking-tight mt-1 block">
-                {currentLocation?.heading ? `${Math.round(currentLocation.heading)}° SCOUT` : '184° TSAVO'}
+                {currentLocation?.heading != null
+                  ? `${Math.round(currentLocation.heading)}°`
+                  : '—'}
               </span>
             </div>
 
