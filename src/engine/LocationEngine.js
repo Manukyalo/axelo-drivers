@@ -23,10 +23,16 @@ class LocationEngine {
         const update = {
           latitude,
           longitude,
-          heading: heading || 0,
-          // Geolocation API returns speed in m/s — convert to km/h here so every
-          // consumer (dashboards, Firestore, LiveMap) receives the correct unit.
-          speed: speed != null ? Math.round(speed * 3.6 * 10) / 10 : 0,
+          // Preserve null so dashboards can show '—' when stationary.
+          // Do NOT coerce to 0 — 0° is a valid bearing (true north).
+          heading: heading ?? null,
+          // Convert m/s → km/h then apply a 1.5 km/h dead-band to eliminate
+          // GPS chipset noise that causes false speed readings when stationary.
+          speed: (() => {
+            if (speed == null) return 0;
+            const kmh = Math.round(speed * 3.6 * 10) / 10;
+            return kmh < 1.5 ? 0 : kmh;
+          })(),
           accuracy,
           bookingId,
           isOnline: true,
